@@ -1,56 +1,81 @@
 # SmartRecorder
 
-AI 기반 웹 레코더 도구입니다. 이 프로젝트는 기존 React 모듈에서 순수 JavaScript(Vanilla JS)와 Tailwind CSS를 사용하는 독립형 웹 애플리케이션으로 전환되었습니다.
+AI 기반 웹 레코더 도구입니다. 이 프로젝트는 순수 JavaScript(Vanilla JS)와 Tailwind CSS를 사용하는 **크롬 확장 프로그램(Chrome Tool)**으로 개발되었습니다.
 
 ## 🔄 작동 원리 (Workflow)
 
-1. **녹화 준비**: `Start Recording` 버튼 클릭 시 브라우저 탭 선택 창이 뜹니다.
-2. **탭 선택**: 녹화할 대상 탭을 사용자가 선택합니다.
-3. **이벤트 기반 녹화 시작**: 선택된 탭에서 특정 이벤트가 발생하면 녹화가 자동으로 시작됩니다. (현재 개발 중)
-4. **이벤트 기반 녹화 중단**: 작업 완료 등의 이벤트 발생 시 녹화가 자동으로 중단됩니다.
-5. **저장 및 업로드**: 녹화된 영상은 즉시 다운로드되거나 구글 드라이브로 업로드됩니다.
-6. **변환**: 다운로드된 WebM 파일은 필요에 따라 MP4로 변환됩니다.
+1. **녹화 대기 (Armed)**: 확장 프로그램에서 `Start Recording`을 누르고 녹화할 탭을 선택합니다.
+2. **대상 사이트 이동**: 녹화할 페이지(A)로 이동합니다.
+3. **무흔적 시그널**: 사이트 A의 로직이나 단축키를 통해 신호를 보냅니다.
+4. **자동 녹화**: 리코더가 상주하며 신호를 받는 즉시 녹화를 시작/종료합니다.
 
-## 🔗 사이트 A (대상 사이트) 초간편 연동법
+---
 
-대상 사이트의 버튼 클릭 함수에 딱 **2줄**만 추가하세요.
+## 🛠 개발자 가이드 (사이트 A 연동)
+
+개발 중인 사이트(A)에서 마우스 흔적 없이 완벽하게 자동 녹화를 제어하려면 아래 가이드를 따르세요.
+
+### 1. 통신 채널 설정
+
+페이지 상단(또는 필요한 공통 모듈)에 아래 코드를 한 번만 작성합니다.
 
 ```javascript
-// 1. 통신 채널 연결 (페이지 상단에 한 번만)
-const channel = new BroadcastChannel("smart-recorder-sync");
+const recorderChannel = new BroadcastChannel("smart-recorder-sync");
+```
 
-// 2. 버튼 클릭 시 실행할 코드
-function 온클릭_함수() {
-  // 2초 뒤에 녹화 시작 (그동안 마우스를 치우세요!)
-  channel.postMessage({ type: "START_RECORDING", delay: 2000 });
+### 2. 자동 녹화 시작 (무흔적 트리거)
 
-  // 모든 작업이 끝나면 호출
-  // channel.postMessage({ type: 'STOP_RECORDING' });
+버튼 클릭이나 시스템 이벤트 발생 시 2초 뒤에 녹화가 시작되도록 설정합니다.
+
+```javascript
+function startCapture() {
+  // 2s 지연 시작: 사용자가 마우스를 치울 시간을 확보합니다.
+  recorderChannel.postMessage({ type: "START_RECORDING", delay: 2000 });
+
+  // 이후 실제 작업 로직 실행
+  console.log("작업 시작...");
 }
 ```
 
-> [!TIP]
-> `delay`를 2000(2초) 정도로 설정하면, 버튼을 누른 후 마우스를 화면 구석으로 치울 시간이 충분하여 결과물에 마우스 흔적이 남지 않습니다.
+### 3. 자동 녹화 종료
+
+작업이 끝나는 시점에 자동으로 녹화를 정지시킵니다.
+
+```javascript
+function endCapture() {
+  recorderChannel.postMessage({ type: "STOP_RECORDING" });
+}
+```
+
+### 4. 수동 제어 단축키 (선택 사항)
+
+사용자가 직접 키보드로 제어하고 싶을 때 유용합니다.
+
+- **기본 제공**: `Command + Shift + R` (맥 기준, 확장 프로그램 설정에서 변경 가능)
+- **추가 구현**: 사이트 A 내에서 따로 단축키를 처리하고 싶을 때:
+
+```javascript
+window.addEventListener("keydown", (e) => {
+  if (e.metaKey && e.shiftKey && e.key === "R") {
+    recorderChannel.postMessage({ type: "START_RECORDING", delay: 2000 });
+  }
+});
+```
+
+---
 
 ## 🚀 주요 기능
 
-- **간편한 녹화**: 원클릭으로 현재 브라우저 탭 또는 전체 화면 녹화 시작.
-- **자동 다운로드**: 추가적인 로직을 통해 제목이 깨지지 않는 안전한 저장 지원.
-- **수동 저장 옵션**: 브라우저 보안 제약 우회를 위한 백업 버튼 지원.
-- **고화질 지원**: WebM (VP9/Opus) 포맷을 사용하여 원본급 화질 유지.
+- **크롬 확장 프로그램**: 모든 탭 대응 및 강력한 제어 권한.
+- **무흔적 대기 모드**: 탭 선택 후 신호가 올 때까지 대기하여 불필요한 마우스 이동 제거.
+- **안전한 다운로드**: VP9 고화질 코덱 및 강제 파일명 주입으로 안정성 확보.
 
 ## 📂 폴더 구조
 
 - `src/engine/`: 핵심 녹화 엔진 (`recorder.js`)
-- `src/ui/`: 사용자 인터페이스 및 테마 (`main.js`, `style.css`)
-- `index.html`: 메인 대시보드
-
-## 🛠 실행 방법
-
-```bash
-npm install
-npm run dev
-```
+- `src/background/`: 확장 프로그램 서비스 워커 및 메시지 릴레이
+- `src/offscreen/`: 백그라운드 녹화 수행 문서
+- `src/ui/`: 팝업 인터페이스
 
 ## 📝 라이선스
 
