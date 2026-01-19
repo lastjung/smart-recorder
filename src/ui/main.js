@@ -1,4 +1,4 @@
-import { SmartRecorder } from './recorder.js';
+import { SmartRecorder } from '../engine/recorder.js';
 
 const startBtn = document.getElementById('start-btn');
 const stopBtn = document.getElementById('stop-btn');
