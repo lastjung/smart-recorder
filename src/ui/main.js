@@ -1,43 +1,26 @@
-import { SmartRecorder } from '../engine/recorder.js';
-
-chrome.runtime.onMessage.addListener((message) => {
-    if (message.type === 'STATUS_UPDATE') {
-        const statusMsg = document.getElementById('status-msg');
-        if (statusMsg) statusMsg.textContent = message.message;
-    }
-});
+// Popup controller for SmartRecorder Extension
 
 const startBtn = document.getElementById('start-btn');
 const stopBtn = document.getElementById('stop-btn');
-const overlay = document.getElementById('recorder-overlay');
-const countdownText = document.getElementById('countdown-text');
-const stateDot = document.getElementById('record-state-dot');
-
 const statusMsg = document.getElementById('status-msg');
+const stateDot = document.getElementById('record-state-dot');
 const downloadBtn = document.getElementById('download-btn');
 
-const recorder = new SmartRecorder({
-    filename: 'smart-record',
-    onStatus: (msg) => {
-        statusMsg.textContent = msg;
-        if (msg.includes('Download ready')) {
-            downloadBtn.classList.remove('hidden');
+// 서비스 워커로부터 상태 업데이트 수신
+chrome.runtime.onMessage.addListener((message) => {
+    if (message.type === 'STATUS_UPDATE') {
+        statusMsg.textContent = message.message;
+        
+        if (message.message.includes('Recording started')) {
+            updateUIState('recording');
+        } else if (message.message.includes('Download ready') || message.message.includes('Idle')) {
+            updateUIState('idle');
+            if (message.message.includes('Download ready')) {
+                downloadBtn.classList.remove('hidden');
+            }
         }
-    },
-    onStop: () => {
-        updateUIState('idle');
-    },
-    onRemoteStart: () => {
-        // 엔진 내부에서 처리되므로 여기서는 UI만 동기화
-        updateUIState('recording');
-    },
-    onAction: () => {
-        console.log('Action Started!');
-        downloadBtn.classList.add('hidden');
     }
 });
-
-let countdownInterval = null;
 
 const updateUIState = (state) => {
     if (state === 'idle') {
@@ -51,46 +34,18 @@ const updateUIState = (state) => {
     }
 };
 
-const startCountdown = () => {
-    let count = 3;
-    overlay.classList.remove('hidden');
-    countdownText.textContent = count;
-
-    countdownInterval = setInterval(() => {
-        count--;
-        if (count > 0) {
-            countdownText.textContent = count;
-        } else {
-            clearInterval(countdownInterval);
-            overlay.classList.add('hidden');
-            recorder.start();
-            updateUIState('recording');
-        }
-    }, 1000);
-};
-
 // Event Listeners
-startBtn.addEventListener('click', async () => {
-    const success = await recorder.prepare();
-    if (success) {
-        statusMsg.textContent = 'Armed: Waiting for signal from Target Site...';
-        stateDot.className = 'w-4 h-4 rounded-full bg-yellow-500 animate-pulse';
-    }
+startBtn.addEventListener('click', () => {
+    // 백그라운드 서비스 워커에 녹화 시작 명령 전송
+    chrome.runtime.sendMessage({ type: 'START_RECORDING' });
+    downloadBtn.classList.add('hidden');
 });
 
 stopBtn.addEventListener('click', () => {
-    recorder.stop();
-    updateUIState('idle');
+    // 백그라운드 서비스 워커에 녹화 중지 명령 전송
+    chrome.runtime.sendMessage({ type: 'STOP_RECORDING' });
 });
 
-downloadBtn.addEventListener('click', () => {
-    if (recorder.lastBlobUrl && recorder.lastFileName) {
-        const a = document.createElement('a');
-        document.body.appendChild(a); // DOM에 추가하여 확실하게 인식
-        a.style.display = 'none';
-        a.href = recorder.lastBlobUrl;
-        a.download = recorder.lastFileName;
-        a.click();
-        setTimeout(() => document.body.removeChild(a), 1000);
-    }
-});
+// 다운로드 기능은 오프스크린에서 파일이 생성되므로, 
+// 필요한 경우 오프스크린에서 직접 다운로드를 수행하거나 링크를 전달받아야 함.
+// 현재는 recorder.js 내부에서 이미 다운로드를 트리거함.
