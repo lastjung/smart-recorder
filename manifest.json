@@ -34,8 +34,8 @@
     },
     "stop-record": {
       "suggested_key": {
-        "default": "Ctrl+Shift+U",
-        "mac": "Command+Shift+U"
+        "default": "Alt+U",
+        "mac": "Alt+U"
       },
       "description": "Stop and Save Recording"
     }

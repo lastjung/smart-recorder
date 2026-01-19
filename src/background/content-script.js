@@ -48,7 +48,7 @@ function createOverlay() {
             cursor: pointer;
             text-transform: uppercase;
             font-size: 12px;
-        ">Stop & Save (Cmd+Shift+U)</button>
+        ">Stop & Save (Option+U)</button>
     </div>
     <style>
       @keyframes pulse {
