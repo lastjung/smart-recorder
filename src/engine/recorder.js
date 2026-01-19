@@ -53,10 +53,10 @@ export class SmartRecorder {
       this.recordedChunks = [];
       return true;
     } catch (err) {
-      console.error('SmartRecorder: 준비 실패', err);
+      console.log('[ERROR] SmartRecorder: 준비 실패', err);
       return false;
     }
-  }
+}
 
   start() {
     if (!this.stream) return;
@@ -77,7 +77,7 @@ export class SmartRecorder {
         videoBitsPerSecond: 5000000
       });
     } catch (e) {
-      console.error('MediaRecorder 생성 실패:', e);
+      console.log('[ERROR] MediaRecorder 생성 실패:', e);
       return;
     }
 
@@ -154,7 +154,7 @@ export class SmartRecorder {
         }, 1000); 
       } catch (e) {
         this.onStatus('Process Error: ' + e.message);
-        console.error('Process error:', e);
+        console.log('[ERROR] Process error:', e);
       }
     } else {
       this.onStatus('No recorded data found.');
