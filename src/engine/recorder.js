@@ -26,9 +26,14 @@ export class SmartRecorder {
   async prepare(streamId = null) {
     try {
       if (streamId) {
-        // 확장 프로그램(Extension)을 위한 데스크탑 캡처 방식
+        // [FIX] 오디오 캡처 활성화
         this.stream = await navigator.mediaDevices.getUserMedia({
-          audio: false,
+          audio: {
+            mandatory: {
+              chromeMediaSource: 'desktop',
+              chromeMediaSourceId: streamId
+            }
+          },
           video: {
             mandatory: {
               chromeMediaSource: 'desktop',
