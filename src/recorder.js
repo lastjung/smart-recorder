@@ -94,25 +94,41 @@ export class SmartRecorder {
   download() {
     this.onStatus(`Attempting download (${this.recordedChunks.length} chunks)...`);
     console.log('Attempting download, chunk count:', this.recordedChunks.length);
+    
     if (this.recordedChunks.length > 0) {
       try {
-        const type = (this.mediaRecorder && this.mediaRecorder.mimeType) || 'video/webm';
-        const blob = new Blob(this.recordedChunks, { type });
+        // 실제 MediaRecorder가 사용한 MIME 타입 가져오기
+        const actualType = (this.mediaRecorder && this.mediaRecorder.mimeType) || 'video/webm';
+        const blob = new Blob(this.recordedChunks, { type: actualType });
         const url = URL.createObjectURL(blob);
+        
         const a = document.createElement('a');
         document.body.appendChild(a);
         a.style.display = 'none';
+        
+        // 파일명 생성 (특수문자 제거 및 명확한 확장자 부여)
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        const extension = actualType.includes('mp4') ? 'mp4' : 'webm';
+        const finalFileName = `${this.filename}_${timestamp}.${extension}`;
+        
+        console.log('Final FileName:', finalFileName);
+        
         a.href = url;
-        const extension = type.includes('mp4') ? 'mp4' : 'webm';
-        a.download = `${this.filename}-${Date.now()}.${extension}`;
+        // .download 속성 대신 setAttribute를 사용하여 브라우저 호환성 극대화
+        a.setAttribute('download', finalFileName);
+        
+        // 가상 클릭 실행
         a.click();
         
-        this.onStatus('Download started!');
+        this.onStatus(`Download started: ${finalFileName}`);
         
+        // 메모리 해제를 넉넉하게 기다림
         setTimeout(() => {
-          document.body.removeChild(a);
+          if (document.body.contains(a)) {
+            document.body.removeChild(a);
+          }
           URL.revokeObjectURL(url);
-        }, 5000); // 5초로 넉넉하게 연장
+        }, 10000); 
       } catch (e) {
         this.onStatus('Download Error: ' + e.message);
         console.error('Download error:', e);
