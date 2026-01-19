@@ -26,8 +26,8 @@
   "commands": {
     "toggle-record": {
       "suggested_key": {
-        "default": "Alt+Shift+S",
-        "mac": "Alt+Shift+S"
+        "default": "Alt+Shift+M",
+        "mac": "Alt+Shift+M"
       },
       "description": "Start/Stop Recording"
     }
