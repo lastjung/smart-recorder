@@ -72,7 +72,11 @@ async function startCaptureFlow() {
 }
 
 // 단축키 핸들러
-chrome.commands.onCommand.addListener(async (command) => {
+chrome.commands.onCommand.addListener((command) => {
+    handleCommand(command);
+});
+
+async function handleCommand(command) {
     console.log('Command Triggered:', command);
     if (command === 'toggle-record') {
         const isRecording = await getRecordingState();
@@ -83,10 +87,15 @@ chrome.commands.onCommand.addListener(async (command) => {
             await setRecordingState(false);
         }
     }
-});
+}
 
 // 외부 메시지 릴레이
-chrome.runtime.onMessage.addListener(async (message) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    handleMessage(message);
+    return true; // 비동기 응답 채널 유지
+});
+
+async function handleMessage(message) {
     console.log('Internal Message:', message.type);
     const isRecording = await getRecordingState();
     
@@ -96,5 +105,4 @@ chrome.runtime.onMessage.addListener(async (message) => {
         await sendToOffscreen({ type: 'STOP_RECORDING' });
         await setRecordingState(false);
     }
-    return true;
-});
+}
