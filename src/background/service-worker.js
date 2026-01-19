@@ -1,5 +1,17 @@
-// SmartRecorder Service Worker v1.0.8 [SILENT_ERROR_FIX]
-console.log('--- SmartRecorder SW v1.0.8 Booted ---');
+// SmartRecorder Service Worker v1.0.10 [UI_SYNC_FIX]
+console.log('--- SmartRecorder SW v1.0.10 Booted ---');
+
+// UI에 상태 업데이트 알림
+async function notifyUI(message, isForceIdle = false) {
+    try {
+        // 팝업이 열려있는 경우에만 메시지 전송
+        chrome.runtime.sendMessage({ 
+            type: 'STATUS_UPDATE', 
+            message: message,
+            isForceIdle: isForceIdle
+        }).catch(() => {}); // 팝업 닫혀있으면 무시
+    } catch (e) {}
+}
 
 // 상태 초기화
 chrome.storage.session.set({ isRecording: false });
@@ -16,8 +28,9 @@ async function getRecordingState() {
 async function setRecordingState(state) {
     try {
         await chrome.storage.session.set({ isRecording: state });
+        notifyUI(state ? 'Recording started...' : 'Idle - Ready');
     } catch (e) {
-        console.log('[ERROR] State Sync Sync Fail:', e); // 에러 버튼 방지를 위해 log 사용
+        console.log('[ERROR] State Sync Sync Fail:', e);
     }
 }
 
