@@ -7,14 +7,17 @@ const recorder = new SmartRecorder({
     }
 });
 
-chrome.runtime.onMessage.addListener(async (message) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('Offscreen received message:', message);
+    
     if (message.type === 'START_RECORDING') {
-        const success = await recorder.prepare(message.streamId);
-        if (success) {
-            recorder.handleRemoteMessage(message);
-        }
+        recorder.prepare(message.streamId).then(success => {
+            if (success) recorder.handleRemoteMessage(message);
+        });
+        sendResponse({ status: 'starting' });
     } else if (message.type === 'STOP_RECORDING') {
         recorder.stop();
+        sendResponse({ status: 'stopped' });
     }
+    return true; // 비동기 응답 지원
 });
