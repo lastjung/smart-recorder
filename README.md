@@ -52,18 +52,23 @@ function endCapture() {
 사용자가 직접 키보드로 제어하고 싶을 때 유용합니다.
 
 - **기본 제공 단축키**:
-  - **Windows/Linux**: `Ctrl + Shift + Y` (YouTube 약자)
-  - **macOS**: `Command(⌘) + Shift + Y`
+  - **녹화 시작 (Start)**: `Ctrl/Cmd + Shift + U`
+  - **녹화 중단 (Stop & Save)**: `Ctrl/Cmd + Shift + Y`
     _(크롬 설정(`chrome://extensions/shortcuts`)에서 변경 가능)_
 
-- **사이트 A 내 직접 구현 예시 (Cross-platform)**:
+- **사이트 A 내 직접 구현 예시**:
 
 ```javascript
 window.addEventListener("keydown", (e) => {
-  // Ctrl/Cmd + Shift + Y 감지
+  // Ctrl/Cmd + Shift + U/Y 감지
   const isCmdOrCtrl = e.metaKey || e.ctrlKey;
-  if (isCmdOrCtrl && e.shiftKey && (e.key === "Y" || e.key === "y")) {
+  // 시작 단축키 (U)
+  if (isCmdOrCtrl && e.shiftKey && (e.key === "U" || e.key === "u")) {
     recorderChannel.postMessage({ type: "START_RECORDING", delay: 2000 });
+  }
+  // 중단 단축키 (Y)
+  if (isCmdOrCtrl && e.shiftKey && (e.key === "Y" || e.key === "y")) {
+    recorderChannel.postMessage({ type: "STOP_RECORDING" });
   }
 });
 ```

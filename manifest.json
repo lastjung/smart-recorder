@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "SmartRecorder",
-  "version": "1.0.10",
+  "version": "1.0.12",
   "description": "AI-Powered Invisible Web Recorder",
   "permissions": [
     "storage",
@@ -25,12 +25,19 @@
     "type": "module"
   },
   "commands": {
-    "toggle-record": {
+    "start-record": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+U",
+        "mac": "Command+Shift+U"
+      },
+      "description": "Start Screen Capture"
+    },
+    "stop-record": {
       "suggested_key": {
         "default": "Ctrl+Shift+Y",
         "mac": "Command+Shift+Y"
       },
-      "description": "Start/Stop Recording"
+      "description": "Stop and Save Recording"
     }
   },
   "content_scripts": [

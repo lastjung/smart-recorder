@@ -1,5 +1,5 @@
-// SmartRecorder Service Worker v1.0.10 [UI_SYNC_FIX]
-console.log('--- SmartRecorder SW v1.0.10 Booted ---');
+// SmartRecorder Service Worker v1.0.12 [SPLIT_KEYS_FIX]
+console.log('--- SmartRecorder SW v1.0.12 Booted ---');
 
 // UI에 상태 업데이트 알림
 async function notifyUI(message, isForceIdle = false) {
@@ -128,8 +128,14 @@ async function handleToggle() {
 }
 
 // 리스너
-chrome.commands.onCommand.addListener((command) => {
-    if (command === 'toggle-record') handleToggle();
+chrome.commands.onCommand.addListener(async (command) => {
+    const isRecording = await getRecordingState();
+    
+    if (command === 'start-record') {
+        if (!isRecording) await initiateCapture();
+    } else if (command === 'stop-record') {
+        await terminateCapture();
+    }
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -138,7 +144,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('[SW] Internal Msg:', message.type);
 
     if (message.type === 'START_RECORDING') {
-        handleToggle();
+        getRecordingState().then(active => { if (!active) initiateCapture(); });
     } else if (message.type === 'STOP_RECORDING') {
         terminateCapture();
     } else if (message.type === 'RECORDING_STOPPED') {
