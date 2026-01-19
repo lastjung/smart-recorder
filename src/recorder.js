@@ -102,31 +102,32 @@ export class SmartRecorder {
     if (this.recordedChunks.length > 0) {
       try {
         const actualType = (this.mediaRecorder && this.mediaRecorder.mimeType) || 'video/webm';
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        const extension = actualType.includes('mp4') ? 'mp4' : 'webm';
+        this.lastFileName = `${this.filename}_${timestamp}.${extension}`;
+
+        // [핵심] Blob이 아닌 'File' 객체를 생성하여 파일명을 강제로 주입
         const blob = new Blob(this.recordedChunks, { type: actualType });
+        const file = new File([blob], this.lastFileName, { type: actualType });
         
         // 이전 URL 해제
         if (this.lastBlobUrl) URL.revokeObjectURL(this.lastBlobUrl);
         
-        this.lastBlobUrl = URL.createObjectURL(blob);
+        this.lastBlobUrl = URL.createObjectURL(file);
         
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-        const extension = actualType.includes('mp4') ? 'mp4' : 'webm';
-        this.lastFileName = `${this.filename}_${timestamp}.${extension}`;
-        
-        // 자동 다운로드 시도
+        // 자동 다운로드 시도 (일부 브라우저에서는 여전히 UUID일 수 있음)
         const a = document.createElement('a');
+        document.body.appendChild(a);
         a.style.display = 'none';
         a.href = this.lastBlobUrl;
         a.download = this.lastFileName;
-        document.body.appendChild(a);
         a.click();
         
-        this.onStatus(`Download ready: ${this.lastFileName}`);
+        this.onStatus(`Ready: ${this.lastFileName}`);
         
-        // 30초 후 제거 (수동 다운로드 기회 제공)
         setTimeout(() => {
-          if (document.body.contains(a)) document.body.removeChild(a);
-        }, 30000); 
+            if (document.body.contains(a)) document.body.removeChild(a);
+        }, 1000); 
       } catch (e) {
         this.onStatus('Process Error: ' + e.message);
         console.error('Process error:', e);

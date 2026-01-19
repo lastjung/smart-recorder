@@ -74,8 +74,11 @@ stopBtn.addEventListener('click', () => {
 downloadBtn.addEventListener('click', () => {
     if (recorder.lastBlobUrl && recorder.lastFileName) {
         const a = document.createElement('a');
+        document.body.appendChild(a); // DOM에 추가하여 확실하게 인식
+        a.style.display = 'none';
         a.href = recorder.lastBlobUrl;
         a.download = recorder.lastFileName;
         a.click();
+        setTimeout(() => document.body.removeChild(a), 1000);
     }
 });
