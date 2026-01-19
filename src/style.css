@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #facc15;
+  --dark-bg: #020617;
+}
+
+body {
+  @apply bg-slate-950 text-slate-100 min-h-screen font-sans;
+  background: radial-gradient(circle at top right, #1e293b 0%, #020617 100%);
+}
+
+.glass {
+  @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl;
+}
+
+.btn-primary {
+  @apply bg-primary text-black font-bold py-3 px-8 rounded-full 
+         hover:bg-yellow-300 transition-all duration-300 
+         hover:scale-105 active:scale-95 shadow-lg shadow-yellow-500/20 active:shadow-none;
+}
