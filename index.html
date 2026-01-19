@@ -3,102 +3,63 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SmartRecorder - AI Powered Web Recorder</title>
+    <title>SmartRecorder Extension</title>
     <link rel="stylesheet" href="./src/ui/style.css" />
+    <style>
+      body {
+        width: 350px;
+        height: auto;
+        min-height: 380px;
+        margin: 0;
+        background: #0f172a;
+        color: white;
+        font-family: system-ui, -apple-system, sans-serif;
+      }
+      .glass-mini {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+    </style>
   </head>
-  <body class="overflow-x-hidden">
-    <!-- Main UI -->
-    <main
-      class="relative z-10 flex flex-col items-center justify-center min-h-screen p-4"
-    >
-      <!-- Header Section -->
-      <header
-        class="text-center mb-12 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700"
-      >
-        <h1 class="text-5xl md:text-7xl font-black tracking-tighter">
-          SMART <span class="text-primary italic">RECORDER</span>
+  <body class="overflow-hidden">
+    <!-- Extension Popup UI -->
+    <div class="p-6 flex flex-col h-full space-y-6">
+      
+      <!-- Header -->
+      <header class="flex items-center justify-between border-b border-white/5 pb-4">
+        <h1 class="text-xl font-black tracking-tighter uppercase">
+          Smart <span class="text-amber-400 italic">Recorder</span>
         </h1>
-        <p
-          class="text-slate-400 text-lg md:text-xl max-w-lg mx-auto leading-relaxed"
-        >
-          한 줄의 코드로 구현하는 자동 녹화 도구.<br />
-          화면 캡처부터 자동 저장까지 한 번에.
-        </p>
+        <div id="record-state-dot" class="w-3 h-3 rounded-full bg-slate-700 shadow-[0_0_10px_rgba(0,0,0,0.5)]"></div>
       </header>
 
-      <!-- Recorder Card -->
-      <div
-        class="glass w-full max-w-2xl rounded-3xl p-8 md:p-12 space-y-8 relative overflow-hidden"
-      >
-        <!-- Background Glow -->
-        <div
-          class="absolute -top-24 -right-24 w-64 h-64 bg-primary/10 rounded-full blur-[100px] pointer-events-none"
-        ></div>
-
-        <div class="flex flex-col items-center space-y-10">
-          <!-- Status & Action -->
-          <div
-            id="status-display"
-            class="w-20 h-20 rounded-full border-4 border-white/10 flex items-center justify-center relative"
-          >
-            <div
-              id="record-state-dot"
-              class="w-4 h-4 rounded-full bg-slate-700"
-            ></div>
-          </div>
-
-            <div class="flex flex-col w-full space-y-4">
-              <button
-                id="start-btn"
-                class="btn-primary w-full text-xl uppercase tracking-widest"
-              >
-                Start Recording
-              </button>
-              <button id="stop-btn" class="hidden w-full py-4 text-slate-400 hover:text-white transition-colors uppercase font-bold tracking-widest">
-                  Stop Now
-              </button>
-              <div id="status-msg" class="text-xs text-center font-mono text-slate-500 h-4 mt-2"></div>
-              <button id="download-btn" class="hidden w-full py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all font-bold text-sm">
-                  💾 Save Recorded Video
-              </button>
-            </div>
+      <!-- Main Action Card -->
+      <div class="glass-mini rounded-2xl p-6 space-y-6 relative overflow-hidden">
+        <div class="text-center space-y-1">
+            <div id="status-msg" class="text-[11px] font-mono text-slate-400 min-h-[1rem]">Ready to record</div>
         </div>
 
-        <!-- Settings (Optional/Future) -->
-        <div
-          class="pt-8 border-t border-white/5 flex justify-between items-center text-sm text-slate-500"
-        >
-          <span>Resolution: Full Tab</span>
-          <span>Format: WebM (VP9)</span>
+        <div class="flex flex-col space-y-3">
+          <button id="start-btn" class="bg-amber-400 hover:bg-amber-500 text-slate-900 w-full py-4 rounded-xl text-sm font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-amber-400/20">
+            Start Capture
+          </button>
+          
+          <button id="stop-btn" class="hidden w-full py-4 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-xl transition-all font-black text-sm uppercase tracking-widest">
+            Stop Recording
+          </button>
+
+          <button id="download-btn" class="hidden w-full py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all font-bold text-sm">
+            💾 Save Video
+          </button>
         </div>
       </div>
 
-      <!-- Preview Area (Hidden by default) -->
-      <div id="preview-container" class="mt-12 w-full max-w-4xl hidden">
-        <video
-          id="preview-video"
-          controls
-          class="w-full rounded-2xl shadow-2xl border border-white/10"
-        ></video>
-      </div>
-    </main>
-
-    <!-- Overlay Layer (Countdown) -->
-    <div
-      id="recorder-overlay"
-      class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/40 backdrop-blur-sm pointer-events-none select-none"
-    >
-      <div class="relative">
-        <div
-          class="absolute inset-0 bg-primary/20 blur-[80px] rounded-full animate-pulse"
-        ></div>
-        <div
-          id="countdown-text"
-          class="text-[20rem] font-black text-primary drop-shadow-[0_0_50px_rgba(250,204,21,0.6)]"
-        >
-          3
-        </div>
-      </div>
+      <!-- Footer Info -->
+      <footer class="text-[10px] text-slate-500 flex justify-between uppercase tracking-tighter opacity-60">
+        <span>Shortcut: <b>Cmd+Shift+R</b></span>
+        <span>VP9 High Quality</span>
+      </footer>
     </div>
 
     <script type="module" src="./src/ui/main.js"></script>
