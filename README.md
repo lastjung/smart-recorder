@@ -52,17 +52,15 @@ function endCapture() {
 사용자가 직접 키보드로 제어하고 싶을 때 유용합니다.
 
 - **기본 제공 단축키**:
-  - **Windows/Linux**: `Ctrl + Shift + R`
-  - **macOS**: `Command(⌘) + Shift + R`
+  - **전 공통**: `Alt + Shift + S` (맥의 경우 `Option + Shift + S`)
     _(크롬 설정(`chrome://extensions/shortcuts`)에서 변경 가능)_
 
 - **사이트 A 내 직접 구현 예시 (Cross-platform)**:
 
 ```javascript
 window.addEventListener("keydown", (e) => {
-  // Ctrl/Cmd + Shift + R 감지
-  const isCmdOrCtrl = e.metaKey || e.ctrlKey;
-  if (isCmdOrCtrl && e.shiftKey && e.key === "R") {
+  // Alt + Shift + S 감지
+  if (e.altKey && e.shiftKey && (e.key === "S" || e.key === "s")) {
     recorderChannel.postMessage({ type: "START_RECORDING", delay: 2000 });
   }
 });
