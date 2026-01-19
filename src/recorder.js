@@ -33,29 +33,51 @@ export class SmartRecorder {
   start() {
     if (!this.stream) return;
 
-    this.mediaRecorder = new MediaRecorder(this.stream, {
-      mimeType: 'video/webm;codecs=vp9',
-      videoBitsPerSecond: 5000000
-    });
+    // 지원되는 최적의 MIME 타입 찾기
+    const mimeType = [
+      'video/webm;codecs=vp9,opus',
+      'video/webm;codecs=vp8,opus',
+      'video/webm',
+      'video/mp4'
+    ].find(type => MediaRecorder.isTypeSupported(type)) || '';
+
+    console.log('Using MIME type:', mimeType);
+
+    try {
+      this.mediaRecorder = new MediaRecorder(this.stream, {
+        mimeType,
+        videoBitsPerSecond: 5000000
+      });
+    } catch (e) {
+      console.error('MediaRecorder 생성 실패:', e);
+      return;
+    }
 
     this.mediaRecorder.ondataavailable = (e) => {
-      if (e.data && e.data.size > 0) this.recordedChunks.push(e.data);
+      if (e.data && e.data.size > 0) {
+        this.recordedChunks.push(e.data);
+      }
     };
 
     this.mediaRecorder.onstop = () => {
-      this.stopTracks();
+      console.log('Recording stopped, chunks:', this.recordedChunks.length);
       this.download();
+      this.stopTracks();
+    };
+
+    // 브라우저 자체 '공유 중지' 버튼 대응
+    this.stream.getTracks()[0].onended = () => {
+      if (this.isRecording) this.stop();
     };
 
     this.mediaRecorder.start(100);
     this.isRecording = true;
     
-    // 카운트다운 직후 액션 실행
-    this.onAction();
+    if (this.onAction) this.onAction();
   }
 
   stop() {
-    if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
       this.mediaRecorder.stop();
     }
     this.isRecording = false;
@@ -64,18 +86,28 @@ export class SmartRecorder {
   stopTracks() {
     if (this.stream) {
       this.stream.getTracks().forEach(track => track.stop());
+      this.stream = null;
     }
   }
 
   download() {
+    console.log('Attempting download, chunk count:', this.recordedChunks.length);
     if (this.recordedChunks.length > 0) {
-      const blob = new Blob(this.recordedChunks, { type: 'video/webm' });
+      const blob = new Blob(this.recordedChunks, { type: this.mediaRecorder.mimeType });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
+      document.body.appendChild(a); // 일부 브라우저 대응
+      a.style.display = 'none';
       a.href = url;
-      a.download = `${this.filename}-${Date.now()}.webm`;
+      const extension = this.mediaRecorder.mimeType.includes('mp4') ? 'mp4' : 'webm';
+      a.download = `${this.filename}-${Date.now()}.${extension}`;
       a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 100);
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+    } else {
+      console.warn('recordedChunks가 비어있어 다운로드를 건너뜁니다.');
     }
     this.recordedChunks = [];
   }
