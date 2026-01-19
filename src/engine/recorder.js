@@ -23,14 +23,28 @@ export class SmartRecorder {
     this.lastFileName = null;
   }
 
-  async prepare() {
+  async prepare(streamId = null) {
     try {
-      this.stream = await navigator.mediaDevices.getDisplayMedia({
-        video: true,
-        audio: true,
-        selfBrowserSurface: 'include',
-        systemAudio: 'include'
-      });
+      if (streamId) {
+        // 확장 프로그램(Extension)을 위한 데스크탑 캡처 방식
+        this.stream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: {
+            mandatory: {
+              chromeMediaSource: 'desktop',
+              chromeMediaSourceId: streamId
+            }
+          }
+        });
+      } else {
+        // 일반 웹 사이트를 위한 방식
+        this.stream = await navigator.mediaDevices.getDisplayMedia({
+          video: { frameRate: { ideal: 30 } },
+          audio: true,
+          selfBrowserSurface: 'include',
+          systemAudio: 'include'
+        });
+      }
       this.recordedChunks = [];
       return true;
     } catch (err) {
