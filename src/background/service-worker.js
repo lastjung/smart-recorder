@@ -1,7 +1,15 @@
-// SmartRecorder Service Worker v1.0.1 - Robust Edition
-console.log('SmartRecorder Service Worker Loaded [v1.0.1]');
+// SmartRecorder Service Worker v1.0.2 - Persisted State Edition
+console.log('SmartRecorder Service Worker Loaded [v1.0.2]');
 
-let isRecording = false;
+// 녹화 상태 가져오기/설정하기 (MV3 서비스 워커는 수시로 재시작되므로 storage 사용 필수)
+async function getRecordingState() {
+    const data = await chrome.storage.session.get('isRecording');
+    return !!data.isRecording;
+}
+
+async function setRecordingState(state) {
+    await chrome.storage.session.set({ isRecording: state });
+}
 
 // 오프스크린 문서 생성 및 준비
 async function setupOffscreen() {
@@ -51,7 +59,7 @@ async function startCaptureFlow() {
             }
             
             console.log('Stream ID obtained:', streamId);
-            isRecording = true;
+            await setRecordingState(true);
             await sendToOffscreen({ 
                 type: 'START_RECORDING', 
                 streamId: streamId,
@@ -67,23 +75,26 @@ async function startCaptureFlow() {
 chrome.commands.onCommand.addListener(async (command) => {
     console.log('Command Triggered:', command);
     if (command === 'toggle-record') {
+        const isRecording = await getRecordingState();
         if (!isRecording) {
             await startCaptureFlow();
         } else {
             await sendToOffscreen({ type: 'STOP_RECORDING' });
-            isRecording = false;
+            await setRecordingState(false);
         }
     }
 });
 
 // 외부 메시지 릴레이
-chrome.runtime.onMessage.addListener((message) => {
+chrome.runtime.onMessage.addListener(async (message) => {
     console.log('Internal Message:', message.type);
+    const isRecording = await getRecordingState();
+    
     if (message.type === 'START_RECORDING') {
-        if (!isRecording) startCaptureFlow();
+        if (!isRecording) await startCaptureFlow();
     } else if (message.type === 'STOP_RECORDING') {
-        sendToOffscreen({ type: 'STOP_RECORDING' });
-        isRecording = false;
+        await sendToOffscreen({ type: 'STOP_RECORDING' });
+        await setRecordingState(false);
     }
     return true;
 });
