@@ -52,17 +52,17 @@ function endCapture() {
 사용자가 직접 키보드로 제어하고 싶을 때 유용합니다.
 
 - **기본 제공 단축키**:
-  - **Windows/Linux**: `Ctrl + Shift + M`
-  - **macOS**: `Command(⌘) + Shift + M`
+  - **Windows/Linux**: `Ctrl + Shift + Y` (YouTube 약자)
+  - **macOS**: `Command(⌘) + Shift + Y`
     _(크롬 설정(`chrome://extensions/shortcuts`)에서 변경 가능)_
 
 - **사이트 A 내 직접 구현 예시 (Cross-platform)**:
 
 ```javascript
 window.addEventListener("keydown", (e) => {
-  // Ctrl/Cmd + Shift + M 감지
+  // Ctrl/Cmd + Shift + Y 감지
   const isCmdOrCtrl = e.metaKey || e.ctrlKey;
-  if (isCmdOrCtrl && e.shiftKey && (e.key === "M" || e.key === "m")) {
+  if (isCmdOrCtrl && e.shiftKey && (e.key === "Y" || e.key === "y")) {
     recorderChannel.postMessage({ type: "START_RECORDING", delay: 2000 });
   }
 });

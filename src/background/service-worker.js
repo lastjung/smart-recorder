@@ -1,15 +1,12 @@
-// SmartRecorder Service Worker v1.0.2 [FINALIZE]
-// 이 로그가 보인다면 최신 버전이 로드된 것입니다.
-console.error('--- SmartRecorder SW v1.0.2 Booted ---');
+// SmartRecorder Service Worker v1.0.3 [FINAL_STABLE]
+console.error('--- SmartRecorder SW v1.0.3 Booted ---');
 
 // 상태 관리 (localStorage 기반)
 async function getRecordingState() {
     try {
         const data = await chrome.storage.local.get('isRecording');
-        console.log('[SW] Current State:', !!data.isRecording);
         return !!data.isRecording;
     } catch (e) {
-        console.error('[SW] State Load Error:', e);
         return false;
     }
 }
@@ -17,22 +14,26 @@ async function getRecordingState() {
 async function setRecordingState(state) {
     try {
         await chrome.storage.local.set({ isRecording: state });
-        console.log('[SW] State Saved:', state);
+        console.error('[SW] State Saved:', state);
     } catch (e) {
         console.error('[SW] State Save Error:', e);
     }
 }
 
-// 오프스크린 준비
+// 오프스크린 준비 (지연 로직 추가)
 async function ensureOffscreen() {
     try {
         if (await chrome.offscreen.hasDocument()) return true;
-        console.log('[SW] Creating Offscreen...');
+        
+        console.error('[SW] Creating Offscreen Document...');
         await chrome.offscreen.createDocument({
             url: 'src/offscreen/offscreen.html',
             reasons: ['USER_MEDIA'],
             justification: 'Background screen recording'
         });
+        
+        // 중요: 오프스크린 스크립트가 로드될 시간을 충분히 줌
+        await new Promise(r => setTimeout(r, 700));
         return true;
     } catch (e) {
         console.error('[SW] Offscreen Setup Fail:', e);
@@ -40,38 +41,40 @@ async function ensureOffscreen() {
     }
 }
 
-// 메시지 전송 (오프스크린 전용)
+// 메시지 전송 (안전한 릴레이)
 async function dispatchToOffscreen(message) {
     const ready = await ensureOffscreen();
     if (!ready) {
-        console.error('[SW] Cannot dispatch: Offscreen not ready');
+        console.error('[SW] Message Dispatch Failed: Offscreen not ready');
         return;
     }
     
-    // 메시지 릴레이 (응답 대기 없음)
     chrome.runtime.sendMessage(message, (response) => {
         if (chrome.runtime.lastError) {
-            console.warn('[SW] Message relay warning (normal if no active listener):', chrome.runtime.lastError.message);
+            console.error('[SW] Offscreen relay notice:', chrome.runtime.lastError.message);
         } else {
-            console.log('[SW] Relay Success:', message.type);
+            console.error('[SW] Message Relayed:', message.type);
         }
     });
 }
 
-// 캡처 흐름 시작
+// 캡처 흐름
 async function initiateCapture() {
     try {
-        console.error('[SW] Initiating Capture Flow...');
+        console.error('[SW] Requesting Capture Tab (YouTube Mode)...');
         const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-        const currentTab = tabs[0];
+        if (!tabs[0]) {
+            console.error('[SW] No active tab found');
+            return;
+        }
 
-        chrome.desktopCapture.chooseDesktopMedia(['tab', 'screen', 'window'], currentTab, async (streamId) => {
+        chrome.desktopCapture.chooseDesktopMedia(['tab', 'screen', 'window'], tabs[0], async (streamId) => {
             if (!streamId) {
-                console.error('[SW] Capture Access Denied or Cancelled');
+                console.error('[SW] User cancelled capture');
                 return;
             }
             
-            console.error('[SW] StreamID Received:', streamId);
+            console.error('[SW] StreamID obtained. Starting Offscreen Recording...');
             await setRecordingState(true);
             await dispatchToOffscreen({ 
                 type: 'START_RECORDING', 
@@ -80,42 +83,44 @@ async function initiateCapture() {
             });
         });
     } catch (e) {
-        console.error('[SW] Critical Capture Error:', e);
+        console.error('[SW] Capture Initiation Error:', e);
     }
 }
 
-// [1] 명령(단축키) 리스너 - 동기 리스너 패턴
-chrome.commands.onCommand.addListener((command) => {
-    console.error('[SW] Command Recv:', command);
-    if (command === 'toggle-record') {
-        processToggle();
-    }
-});
-
-async function processToggle() {
+// 명령 처리 통합
+async function handleToggle() {
     const active = await getRecordingState();
+    console.error('[SW] Toggle request. Current status:', active);
+    
     if (!active) {
         await initiateCapture();
     } else {
-        console.error('[SW] Stopping Recording...');
+        console.error('[SW] Stopping recording session...');
         await dispatchToOffscreen({ type: 'STOP_RECORDING' });
         await setRecordingState(false);
     }
 }
 
-// [2] 메시지(내부) 리스너 - 비동기 채널 유지 패턴
+// 리스너 등록
+chrome.commands.onCommand.addListener((command) => {
+    console.error('[SW] Command received:', command);
+    if (command === 'toggle-record') {
+        handleToggle();
+    }
+});
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('[SW] Internal Sync Message:', message.type);
+    console.error('[SW] Internal message:', message.type);
     
     if (message.type === 'START_RECORDING') {
         getRecordingState().then(active => {
             if (!active) initiateCapture();
         });
-        sendResponse({ ack: true });
     } else if (message.type === 'STOP_RECORDING') {
         dispatchToOffscreen({ type: 'STOP_RECORDING' });
         setRecordingState(false);
-        sendResponse({ ack: true });
     }
-    return true; // Keep channel open for async
+    
+    sendResponse({ ack: true });
+    return true;
 });
