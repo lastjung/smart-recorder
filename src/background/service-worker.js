@@ -1,5 +1,5 @@
-// SmartRecorder Service Worker v1.0.12 [SPLIT_KEYS_FIX]
-console.log('--- SmartRecorder SW v1.0.12 Booted ---');
+// SmartRecorder Service Worker v1.0.14 [FORCE_STOP_FIX]
+console.log('--- SmartRecorder SW v1.0.14 Booted ---');
 
 // UI에 상태 업데이트 알림
 async function notifyUI(message, isForceIdle = false) {
@@ -98,10 +98,13 @@ async function initiateCapture() {
 
 // 정지 로직 (강제성 강화)
 async function terminateCapture() {
+    console.log('[SW] Executing Terminate Sequence...');
     try {
         const hasDoc = await chrome.offscreen.hasDocument();
         if (hasDoc) {
             await dispatchToOffscreen({ type: 'STOP_RECORDING' });
+        } else {
+            console.log('[SW] No offscreen doc found, skipping message.');
         }
     } catch (e) {
         console.log('[ERROR] Terminate Fail:', e);
@@ -129,11 +132,14 @@ async function handleToggle() {
 
 // 리스너
 chrome.commands.onCommand.addListener(async (command) => {
+    console.log('[SW] Command Received:', command);
     const isRecording = await getRecordingState();
     
     if (command === 'start-record') {
         if (!isRecording) await initiateCapture();
     } else if (command === 'stop-record') {
+        // [FIX] 녹화 상태가 아니더라도 강제로 종료 로직 수행 (상태 꼬임 방지)
+        console.log('[SW] Force Stop Triggered via Command');
         await terminateCapture();
     }
 });
