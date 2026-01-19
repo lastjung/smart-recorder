@@ -20,6 +20,10 @@ const recorder = new SmartRecorder({
     onStop: () => {
         updateUIState('idle');
     },
+    onRemoteStart: () => {
+        // 엔진 내부에서 처리되므로 여기서는 UI만 동기화
+        updateUIState('recording');
+    },
     onAction: () => {
         console.log('Action Started!');
         downloadBtn.classList.add('hidden');
@@ -62,7 +66,8 @@ const startCountdown = () => {
 startBtn.addEventListener('click', async () => {
     const success = await recorder.prepare();
     if (success) {
-        startCountdown();
+        statusMsg.textContent = 'Armed: Waiting for signal from Target Site...';
+        stateDot.className = 'w-4 h-4 rounded-full bg-yellow-500 animate-pulse';
     }
 });
 

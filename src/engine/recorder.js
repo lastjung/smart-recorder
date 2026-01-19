@@ -9,6 +9,11 @@ export class SmartRecorder {
     this.filename = options.filename || 'web-capture';
     this.onStatus = options.onStatus || (() => {});
     this.onStop = options.onStop || (() => {});
+    this.onRemoteStart = options.onRemoteStart || (() => {});
+    
+    // 외부 탭 통신을 위한 채널 설정 (Option 1)
+    this.channel = new BroadcastChannel('smart-recorder-sync');
+    this.channel.onmessage = (e) => this.handleRemoteMessage(e.data);
     
     this.mediaRecorder = null;
     this.recordedChunks = [];
@@ -136,5 +141,40 @@ export class SmartRecorder {
       this.onStatus('No recorded data found.');
     }
     this.recordedChunks = [];
+  }
+
+  handleRemoteMessage(data) {
+    console.log('Remote Signal Receipt:', data);
+    
+    if (data.type === 'START_RECORDING') {
+      if (!this.isRecording) {
+        let remaining = data.delay !== undefined ? data.delay : 2000;
+        
+        const countdown = setInterval(() => {
+            if (remaining > 0) {
+                this.onStatus(`Signal received! Starting in ${remaining/1000}s... (Move your mouse!)`);
+                remaining -= 500;
+            } else {
+                clearInterval(countdown);
+                if (this.stream) {
+                    this.start();
+                } else {
+                    this.onStatus('Error: Select tab in Recorder first!');
+                }
+            }
+        }, 500);
+      }
+    } else if (data.type === 'STOP_RECORDING') {
+      if (this.isRecording) {
+        this.onStatus('Stop signal received. Saving...');
+        this.stop();
+      }
+    }
+  }
+
+  // 메모리 해제 시 채널 닫기 (필요 시 호출)
+  destroy() {
+    if (this.channel) this.channel.close();
+    this.stopTracks();
   }
 }
