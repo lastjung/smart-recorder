@@ -1,15 +1,31 @@
-// SmartRecorder Service Worker v1.0.22 [CLEAN_ROLLBACK]
-console.log('--- SmartRecorder SW v1.0.22 Booted ---');
+// SmartRecorder Service Worker v1.0.23 [UI_RESTORED]
+console.log('--- SmartRecorder SW v1.0.23 Booted ---');
 
 // UI에 상태 업데이트 알림
 async function notifyUI(message, isForceIdle = false) {
     try {
+        console.log('[SW-UI]', message);
         chrome.runtime.sendMessage({ 
             type: 'STATUS_UPDATE', 
             message: message,
             isForceIdle: isForceIdle
         }).catch(() => {});
     } catch (e) {}
+}
+
+// 화면에 토스트/바 메시지 전송 (Active Tab)
+async function showVisualFeedback(text) {
+    try {
+        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tabs[0]) {
+            chrome.tabs.sendMessage(tabs[0].id, { 
+                type: 'SHOW_TOAST', 
+                text: text 
+            }).catch(() => {});
+        }
+    } catch (e) {
+        console.log('[SW] Visual Feedback Fail:', e);
+    }
 }
 
 // 상태 초기화
@@ -70,9 +86,8 @@ async function initiateCapture() {
     try {
         const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
         if (!tabs[0]) return;
-
-        // [LOG ONLY]
-        console.log('[SW] Initiating Capture...');
+        
+        showVisualFeedback("⚡️ Initializing...");
 
         chrome.desktopCapture.chooseDesktopMedia(['tab', 'screen', 'window', 'audio'], tabs[0], async (streamId) => {
             if (!streamId) {
@@ -89,8 +104,11 @@ async function initiateCapture() {
             
             if (success) {
                 await setRecordingState(true);
+                // [Trigger UI]
+                showVisualFeedback("🎥 Recording in 2s...");
             } else {
                 console.log('[ERROR] Failed to start record in offscreen');
+                showVisualFeedback("❌ Failed to Start");
             }
         });
     } catch (e) {
@@ -101,6 +119,8 @@ async function initiateCapture() {
 // 정지 로직 (강제성 강화)
 async function terminateCapture() {
     console.log('[SW] Executing Terminate Sequence...');
+    showVisualFeedback("⏹ STOP COMMAND RECEIVED!"); 
+
     try {
         const hasDoc = await chrome.offscreen.hasDocument();
         if (hasDoc) {
@@ -134,6 +154,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         terminateCapture();
     } else if (message.type === 'RECORDING_STOPPED') {
         setRecordingState(false);
+        showVisualFeedback("💾 Saved!");
     }
     
     sendResponse({ status: 'ack' });
