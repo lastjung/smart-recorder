@@ -51,12 +51,18 @@ function endCapture() {
 
 사용자가 직접 키보드로 제어하고 싶을 때 유용합니다.
 
-- **기본 제공**: `Command + Shift + R` (맥 기준, 확장 프로그램 설정에서 변경 가능)
-- **추가 구현**: 사이트 A 내에서 따로 단축키를 처리하고 싶을 때:
+- **기본 제공 단축키**:
+  - **Windows/Linux**: `Ctrl + Shift + R`
+  - **macOS**: `Command(⌘) + Shift + R`
+    _(크롬 설정(`chrome://extensions/shortcuts`)에서 변경 가능)_
+
+- **사이트 A 내 직접 구현 예시 (Cross-platform)**:
 
 ```javascript
 window.addEventListener("keydown", (e) => {
-  if (e.metaKey && e.shiftKey && e.key === "R") {
+  // Command(Mac) 또는 Ctrl(Win) + Shift + R 감지
+  const isCmdOrCtrl = e.metaKey || e.ctrlKey;
+  if (isCmdOrCtrl && e.shiftKey && e.key === "R") {
     recorderChannel.postMessage({ type: "START_RECORDING", delay: 2000 });
   }
 });
