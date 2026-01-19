@@ -21,6 +21,9 @@ export class SmartRecorder {
     this.isRecording = false;
     this.lastBlobUrl = null;
     this.lastFileName = null;
+    
+    // [FIX] 타이머 추적용 변수 추가
+    this.countdownTimer = null;
   }
 
   async prepare(streamId = null) {
@@ -168,18 +171,23 @@ export class SmartRecorder {
   }
 
   handleRemoteMessage(data) {
-    console.log('Remote Signal Receipt:', data);
+    console.log('[Recorder] Signal Received:', data.type, data); // [VISIBILITY] 로그 강화
     
     if (data.type === 'START_RECORDING') {
       if (!this.isRecording) {
+        // [FIX] 기존 타이머가 있다면 취소 (중복 실행 방지)
+        if (this.countdownTimer) clearInterval(this.countdownTimer);
+
         let remaining = data.delay !== undefined ? data.delay : 2000;
         
-        const countdown = setInterval(() => {
+        this.countdownTimer = setInterval(() => {
             if (remaining > 0) {
                 this.onStatus(`Signal received! Starting in ${remaining/1000}s... (Move your mouse!)`);
                 remaining -= 500;
             } else {
-                clearInterval(countdown);
+                clearInterval(this.countdownTimer);
+                this.countdownTimer = null;
+                
                 if (this.stream) {
                     this.start();
                 } else {
@@ -189,9 +197,22 @@ export class SmartRecorder {
         }, 500);
       }
     } else if (data.type === 'STOP_RECORDING') {
+      console.log('[Recorder] STOP COMMAND ACTIVATED!!!'); // [VISIBILITY] 핵심 로그
+
+      // [FIX] 카운트다운 중이었다면 즉시 취소
+      if (this.countdownTimer) {
+          console.log('[Recorder] Cancelling pending start...');
+          clearInterval(this.countdownTimer);
+          this.countdownTimer = null;
+          this.onStatus('Recording Start Cancelled.');
+          return;
+      }
+
       if (this.isRecording) {
         this.onStatus('Stop signal received. Saving...');
         this.stop();
+      } else {
+        console.log('[Recorder] Stop ignored: Not recording.');
       }
     }
   }
