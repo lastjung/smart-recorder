@@ -8,6 +8,7 @@ const recorder = new SmartRecorder({
 });
 
 chrome.runtime.onMessage.addListener(async (message) => {
+    console.log('Offscreen received message:', message);
     if (message.type === 'START_RECORDING') {
         const success = await recorder.prepare();
         if (success) {
