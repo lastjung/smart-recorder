@@ -139,19 +139,24 @@ export class SmartRecorder {
         
         this.lastBlobUrl = URL.createObjectURL(file);
         
-        // 자동 다운로드 시도 (일부 브라우저에서는 여전히 UUID일 수 있음)
-        const a = document.createElement('a');
-        document.body.appendChild(a);
-        a.style.display = 'none';
-        a.href = this.lastBlobUrl;
-        a.download = this.lastFileName;
-        a.click();
-        
-        this.onStatus(`Ready: ${this.lastFileName}`);
-        
-        setTimeout(() => {
-            if (document.body.contains(a)) document.body.removeChild(a);
-        }, 1000); 
+        // [ULTRA-FIX] 확장 프로그램 API가 있으면 최우선 사용 (오프스크린 제약 해결)
+        if (typeof chrome !== 'undefined' && chrome.downloads && chrome.downloads.download) {
+            console.log('[Engine] Using chrome.downloads API for robust saving');
+            chrome.downloads.download({
+                url: this.lastBlobUrl,
+                filename: this.lastFileName,
+                saveAs: false
+            }, (downloadId) => {
+                if (chrome.runtime.lastError) {
+                    console.log('[ERROR] Download fail via API:', chrome.runtime.lastError.message);
+                    this.fallbackDownload();
+                } else {
+                    this.onStatus(`Saved: ${this.lastFileName}`);
+                }
+            });
+        } else {
+            this.fallbackDownload();
+        }
       } catch (e) {
         this.onStatus('Process Error: ' + e.message);
         console.log('[ERROR] Process error:', e);
@@ -191,7 +196,21 @@ export class SmartRecorder {
     }
   }
 
-  // 메모리 해제 시 채널 닫기 (필요 시 호출)
+  // 기존 방식 (일반 웹용)
+  fallbackDownload() {
+    const a = document.createElement('a');
+    document.body.appendChild(a);
+    a.style.display = 'none';
+    a.href = this.lastBlobUrl;
+    a.download = this.lastFileName;
+    a.click();
+    this.onStatus(`Ready (Fallback): ${this.lastFileName}`);
+    setTimeout(() => {
+        if (document.body.contains(a)) document.body.removeChild(a);
+    }, 1000);
+  }
+
+  // 메모리 해제 시 채널 닫기
   destroy() {
     if (this.channel) this.channel.close();
     this.stopTracks();
