@@ -13,6 +13,8 @@ export class SmartRecorder {
     this.recordedChunks = [];
     this.stream = null;
     this.isRecording = false;
+    this.lastBlobUrl = null;
+    this.lastFileName = null;
   }
 
   async prepare() {
@@ -92,50 +94,42 @@ export class SmartRecorder {
   }
 
   download() {
-    this.onStatus(`Attempting download (${this.recordedChunks.length} chunks)...`);
-    console.log('Attempting download, chunk count:', this.recordedChunks.length);
+    this.onStatus(`Processing recorded video...`);
     
     if (this.recordedChunks.length > 0) {
       try {
-        // 실제 MediaRecorder가 사용한 MIME 타입 가져오기
         const actualType = (this.mediaRecorder && this.mediaRecorder.mimeType) || 'video/webm';
         const blob = new Blob(this.recordedChunks, { type: actualType });
-        const url = URL.createObjectURL(blob);
         
-        const a = document.createElement('a');
-        document.body.appendChild(a);
-        a.style.display = 'none';
+        // 이전 URL 해제
+        if (this.lastBlobUrl) URL.revokeObjectURL(this.lastBlobUrl);
         
-        // 파일명 생성 (특수문자 제거 및 명확한 확장자 부여)
+        this.lastBlobUrl = URL.createObjectURL(blob);
+        
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
         const extension = actualType.includes('mp4') ? 'mp4' : 'webm';
-        const finalFileName = `${this.filename}_${timestamp}.${extension}`;
+        this.lastFileName = `${this.filename}_${timestamp}.${extension}`;
         
-        console.log('Final FileName:', finalFileName);
-        
-        a.href = url;
-        // .download 속성 대신 setAttribute를 사용하여 브라우저 호환성 극대화
-        a.setAttribute('download', finalFileName);
-        
-        // 가상 클릭 실행
+        // 자동 다운로드 시도
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = this.lastBlobUrl;
+        a.download = this.lastFileName;
+        document.body.appendChild(a);
         a.click();
         
-        this.onStatus(`Download started: ${finalFileName}`);
+        this.onStatus(`Download ready: ${this.lastFileName}`);
         
-        // 메모리 해제를 넉넉하게 기다림
+        // 30초 후 제거 (수동 다운로드 기회 제공)
         setTimeout(() => {
-          if (document.body.contains(a)) {
-            document.body.removeChild(a);
-          }
-          URL.revokeObjectURL(url);
-        }, 10000); 
+          if (document.body.contains(a)) document.body.removeChild(a);
+        }, 30000); 
       } catch (e) {
-        this.onStatus('Download Error: ' + e.message);
-        console.error('Download error:', e);
+        this.onStatus('Process Error: ' + e.message);
+        console.error('Process error:', e);
       }
     } else {
       this.onStatus('No recorded data found.');
-      console.warn('recordedChunks가 비어있어 다운로드를 건너뜁니다.');
     }
     this.recordedChunks = [];
   }

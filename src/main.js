@@ -7,14 +7,19 @@ const countdownText = document.getElementById('countdown-text');
 const stateDot = document.getElementById('record-state-dot');
 
 const statusMsg = document.getElementById('status-msg');
+const downloadBtn = document.getElementById('download-btn');
 
 const recorder = new SmartRecorder({
     filename: 'smart-record',
     onStatus: (msg) => {
         statusMsg.textContent = msg;
+        if (msg.includes('Download ready')) {
+            downloadBtn.classList.remove('hidden');
+        }
     },
     onAction: () => {
         console.log('Action Started!');
+        downloadBtn.classList.add('hidden');
     }
 });
 
@@ -63,7 +68,11 @@ stopBtn.addEventListener('click', () => {
     updateUIState('idle');
 });
 
-// 화면 공유 중단 대응 (브라우저 자체 중단 버튼 클릭 시)
-window.addEventListener('blur', () => {
-    // 필요한 경우 추가 로직 가동
+downloadBtn.addEventListener('click', () => {
+    if (recorder.lastBlobUrl && recorder.lastFileName) {
+        const a = document.createElement('a');
+        a.href = recorder.lastBlobUrl;
+        a.download = recorder.lastFileName;
+        a.click();
+    }
 });
