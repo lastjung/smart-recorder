@@ -13,12 +13,15 @@ const recorder = new SmartRecorder({
     filename: 'smart-record',
     onStatus: (msg) => {
         statusMsg.textContent = msg;
-        if (msg.includes('Download ready')) {
+        // [FIX] 체크 조건 완화: 'Ready', 'Downloaded', 'Saved' 등이 포함되면 다운로드 버튼 표시
+        if (msg.includes('Ready') || msg.includes('Downloaded') || msg.includes('Saved')) {
             downloadBtn.classList.remove('hidden');
         }
     },
-    onStop: () => {
+    onStop: (url, filename) => {
         updateUIState('idle');
+        // [FIX] 수동 다운로드 버튼 강제 노출
+        downloadBtn.classList.remove('hidden');
     },
     onRemoteStart: () => {
         // 엔진 내부에서 처리되므로 여기서는 UI만 동기화
@@ -66,8 +69,8 @@ const startCountdown = () => {
 startBtn.addEventListener('click', async () => {
     const success = await recorder.prepare();
     if (success) {
-        statusMsg.textContent = 'Armed: Waiting for signal from Target Site...';
-        stateDot.className = 'w-4 h-4 rounded-full bg-yellow-500 animate-pulse';
+        // [FIX] 신호를 기다리지 않고 즉시 카운트다운 시작 (수동 녹화 활성화)
+        startCountdown();
     }
 });
 

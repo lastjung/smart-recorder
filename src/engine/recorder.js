@@ -111,34 +111,42 @@ export class SmartRecorder {
         const extension = actualType.includes('mp4') ? 'mp4' : 'webm';
         this.lastFileName = `${this.filename}_${timestamp}.${extension}`;
 
-        // [핵심] Blob이 아닌 'File' 객체를 생성하여 파일명을 강제로 주입
+        // [CORE FIX] Use a specific Blob with the correct type
         const blob = new Blob(this.recordedChunks, { type: actualType });
-        const file = new File([blob], this.lastFileName, { type: actualType });
         
-        // 이전 URL 해제
+        // Revoke old URL if exists
         if (this.lastBlobUrl) URL.revokeObjectURL(this.lastBlobUrl);
         
-        this.lastBlobUrl = URL.createObjectURL(file);
+        this.lastBlobUrl = URL.createObjectURL(blob);
         
-        // 자동 다운로드 시도 (일부 브라우저에서는 여전히 UUID일 수 있음)
+        // [STABILITY] Create and trigger a hidden anchor element with explicit download attribute
         const a = document.createElement('a');
-        document.body.appendChild(a);
         a.style.display = 'none';
         a.href = this.lastBlobUrl;
         a.download = this.lastFileName;
-        a.click();
         
-        this.onStatus(`Ready: ${this.lastFileName}`);
+        document.body.appendChild(a);
         
+        // Small delay to ensure DOM attachment before click
         setTimeout(() => {
+          a.click();
+          this.onStatus(`Downloaded: ${this.lastFileName}`);
+          
+          // Cleanup
+          setTimeout(() => {
             if (document.body.contains(a)) document.body.removeChild(a);
-        }, 1000); 
+          }, 500);
+        }, 100);
+
+        // Notify UI that manual download is also available if auto-click fails
+        if (this.onStop) this.onStop(this.lastBlobUrl, this.lastFileName);
+        
       } catch (e) {
-        this.onStatus('Process Error: ' + e.message);
-        console.error('Process error:', e);
+        this.onStatus('Download Error: ' + e.message);
+        console.error('Download error:', e);
       }
     } else {
-      this.onStatus('No recorded data found.');
+      this.onStatus('No recorded data to save.');
     }
     this.recordedChunks = [];
   }

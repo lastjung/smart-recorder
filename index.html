@@ -4,7 +4,41 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SmartRecorder - AI Powered Web Recorder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#facc15',
+            }
+          }
+        }
+      }
+    </script>
     <link rel="stylesheet" href="./src/ui/style.css" />
+    <style>
+      body {
+        background: radial-gradient(circle at top right, #1e293b 0%, #020617 100%);
+      }
+      .glass {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(24px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .btn-primary {
+        background-color: #facc15;
+        color: black;
+        font-weight: bold;
+        padding: 0.75rem 2rem;
+        border-radius: 9999px;
+        transition: all 300ms;
+      }
+      .btn-primary:hover {
+        background-color: #fde047;
+        transform: scale(1.05);
+      }
+    </style>
   </head>
   <body class="overflow-x-hidden">
     <!-- Main UI -->
