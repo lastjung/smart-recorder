@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "SmartRecorder",
+  "version": "1.0.0",
+  "description": "AI-Powered Invisible Web Recorder",
+  "permissions": [
+    "storage",
+    "tabs",
+    "scripting",
+    "offscreen",
+    "activeTab"
+  ],
+  "action": {
+    "default_popup": "index.html",
+    "default_icon": {
+      "16": "public/icons/icon16.png",
+      "48": "public/icons/icon48.png",
+      "128": "public/icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "src/background/service-worker.js",
+    "type": "module"
+  },
+  "commands": {
+    "toggle-record": {
+      "suggested_key": {
+        "default": "Alt+R",
+        "mac": "Alt+R"
+      },
+      "description": "Start/Stop Recording"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/background/content-script.js"]
+    }
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ]
+}

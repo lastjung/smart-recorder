@@ -1,5 +1,12 @@
 import { SmartRecorder } from '../engine/recorder.js';
 
+chrome.runtime.onMessage.addListener((message) => {
+    if (message.type === 'STATUS_UPDATE') {
+        const statusMsg = document.getElementById('status-msg');
+        if (statusMsg) statusMsg.textContent = message.message;
+    }
+});
+
 const startBtn = document.getElementById('start-btn');
 const stopBtn = document.getElementById('stop-btn');
 const overlay = document.getElementById('recorder-overlay');
