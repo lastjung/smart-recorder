@@ -6,11 +6,15 @@ const overlay = document.getElementById('recorder-overlay');
 const countdownText = document.getElementById('countdown-text');
 const stateDot = document.getElementById('record-state-dot');
 
+const statusMsg = document.getElementById('status-msg');
+
 const recorder = new SmartRecorder({
     filename: 'smart-record',
+    onStatus: (msg) => {
+        statusMsg.textContent = msg;
+    },
     onAction: () => {
         console.log('Action Started!');
-        // 여기서 앱의 실제 로직을 실행할 수 있습니다.
     }
 });
 

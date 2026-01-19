@@ -7,6 +7,7 @@ export class SmartRecorder {
     this.stopCondition = options.stopCondition || false;
     this.autoStopDelay = options.autoStopDelay || 1500;
     this.filename = options.filename || 'web-capture';
+    this.onStatus = options.onStatus || (() => {});
     
     this.mediaRecorder = null;
     this.recordedChunks = [];
@@ -91,22 +92,33 @@ export class SmartRecorder {
   }
 
   download() {
+    this.onStatus(`Attempting download (${this.recordedChunks.length} chunks)...`);
     console.log('Attempting download, chunk count:', this.recordedChunks.length);
     if (this.recordedChunks.length > 0) {
-      const blob = new Blob(this.recordedChunks, { type: this.mediaRecorder.mimeType });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      document.body.appendChild(a); // 일부 브라우저 대응
-      a.style.display = 'none';
-      a.href = url;
-      const extension = this.mediaRecorder.mimeType.includes('mp4') ? 'mp4' : 'webm';
-      a.download = `${this.filename}-${Date.now()}.${extension}`;
-      a.click();
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, 100);
+      try {
+        const type = (this.mediaRecorder && this.mediaRecorder.mimeType) || 'video/webm';
+        const blob = new Blob(this.recordedChunks, { type });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        document.body.appendChild(a);
+        a.style.display = 'none';
+        a.href = url;
+        const extension = type.includes('mp4') ? 'mp4' : 'webm';
+        a.download = `${this.filename}-${Date.now()}.${extension}`;
+        a.click();
+        
+        this.onStatus('Download started!');
+        
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 5000); // 5초로 넉넉하게 연장
+      } catch (e) {
+        this.onStatus('Download Error: ' + e.message);
+        console.error('Download error:', e);
+      }
     } else {
+      this.onStatus('No recorded data found.');
       console.warn('recordedChunks가 비어있어 다운로드를 건너뜁니다.');
     }
     this.recordedChunks = [];
