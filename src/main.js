@@ -17,6 +17,9 @@ const recorder = new SmartRecorder({
             downloadBtn.classList.remove('hidden');
         }
     },
+    onStop: () => {
+        updateUIState('idle');
+    },
     onAction: () => {
         console.log('Action Started!');
         downloadBtn.classList.add('hidden');

@@ -8,6 +8,7 @@ export class SmartRecorder {
     this.autoStopDelay = options.autoStopDelay || 1500;
     this.filename = options.filename || 'web-capture';
     this.onStatus = options.onStatus || (() => {});
+    this.onStop = options.onStop || (() => {});
     
     this.mediaRecorder = null;
     this.recordedChunks = [];
@@ -64,8 +65,10 @@ export class SmartRecorder {
 
     this.mediaRecorder.onstop = () => {
       console.log('Recording stopped, chunks:', this.recordedChunks.length);
+      this.isRecording = false; // 보수적으로 한 번 더 설정
       this.download();
       this.stopTracks();
+      this.onStop(); // UI에 중단 알림
     };
 
     // 브라우저 자체 '공유 중지' 버튼 대응
