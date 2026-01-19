@@ -110,10 +110,21 @@ export class SmartRecorder {
   }
 
   stop() {
+    this.cancelPendingStart();
     if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
       this.mediaRecorder.stop();
     }
     this.isRecording = false;
+  }
+
+  cancelPendingStart() {
+    if (this.countdownTimer) {
+      clearInterval(this.countdownTimer);
+      this.countdownTimer = null;
+    }
+    if (!this.isRecording) {
+      this.stopTracks();
+    }
   }
 
   stopTracks() {
@@ -205,6 +216,7 @@ export class SmartRecorder {
           clearInterval(this.countdownTimer);
           this.countdownTimer = null;
           this.onStatus('Recording Start Cancelled.');
+          this.stopTracks();
           return;
       }
 

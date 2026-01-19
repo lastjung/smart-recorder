@@ -20,6 +20,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
         sendResponse({ status: 'starting' });
     } else if (message.type === 'STOP_RECORDING') {
+        recorder.cancelPendingStart();
         recorder.stop();
         sendResponse({ status: 'stopped' });
     }
