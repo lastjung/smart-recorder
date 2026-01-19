@@ -1,63 +1,71 @@
-// 서비스 워커(Service Worker) - 녹화 세션 및 시그널 관리
+// SmartRecorder Service Worker v1.0.1 - Robust Edition
+console.log('SmartRecorder Service Worker Loaded [v1.0.1]');
+
 let isRecording = false;
-let offscreenReady = false;
 
 // 오프스크린 문서 생성 및 준비
 async function setupOffscreen() {
-    if (await chrome.offscreen.hasDocument()) return;
-    
-    console.log('Creating offscreen document...');
-    await chrome.offscreen.createDocument({
-        url: 'src/offscreen/offscreen.html',
-        reasons: ['USER_MEDIA'],
-        justification: 'Recording screen in background'
-    });
+    try {
+        if (await chrome.offscreen.hasDocument()) return;
+        console.log('Creating offscreen document...');
+        await chrome.offscreen.createDocument({
+            url: 'src/offscreen/offscreen.html',
+            reasons: ['USER_MEDIA'],
+            justification: 'Recording screen in background'
+        });
+    } catch (e) {
+        console.error('Failed to setup offscreen:', e);
+    }
 }
 
-// 오프스크린에 메시지를 안전하게 보내는 함수 (준비될 때까지 재시도)
+// 오프스크린에 메시지를 안전하게 보내는 함수
 async function sendToOffscreen(message) {
-    await setupOffscreen();
-    
-    // 오프스크린이 메시지를 받을 준비가 되었는지 루프로 확인
-    let attempts = 0;
-    while (attempts < 10) {
+    try {
+        await setupOffscreen();
+        // 메시지 전송 (응답 대기 없음)
+        await chrome.runtime.sendMessage(message);
+        console.log('Message sent to offscreen:', message.type);
+    } catch (e) {
+        console.warn('Offscreen message failed (likely not ready), retrying in 500ms...');
+        await new Promise(r => setTimeout(r, 500));
         try {
             await chrome.runtime.sendMessage(message);
-            console.log('Message sent successfully:', message.type);
-            return;
-        } catch (e) {
-            console.warn('Offscreen not ready, retrying...', attempts);
-            await new Promise(r => setTimeout(r, 200));
-            attempts++;
+        } catch (retryError) {
+            console.error('Final attempt to send message failed:', retryError);
         }
     }
-    console.error('Failed to send message to offscreen after 10 attempts');
 }
 
 // 사용자에게 탭/화면 선택창을 띄우고 스트림 ID를 가져옴
 async function startCaptureFlow() {
-    // 현재 활성화된 탭에서 캡처 창 띄우기
-    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-    
-    chrome.desktopCapture.chooseDesktopMedia(['tab', 'screen', 'window'], tab, async (streamId) => {
-        if (!streamId) {
-            console.log('Capture cancelled by user');
-            return;
-        }
+    try {
+        // 활성화된 탭 정보 가져오기 (없을 경우 대비)
+        const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+        const targetTab = tabs.length > 0 ? tabs[0] : null;
         
-        console.log('Stream ID obtained:', streamId);
-        isRecording = true;
-        // 오프스크린으로 캡처 시작 명령 전송
-        await sendToOffscreen({ 
-            type: 'START_RECORDING', 
-            streamId: streamId,
-            delay: 2000 
+        console.log('Requesting desktop capture...');
+        chrome.desktopCapture.chooseDesktopMedia(['tab', 'screen', 'window'], targetTab, async (streamId) => {
+            if (!streamId) {
+                console.log('Capture cancelled or failed');
+                return;
+            }
+            
+            console.log('Stream ID obtained:', streamId);
+            isRecording = true;
+            await sendToOffscreen({ 
+                type: 'START_RECORDING', 
+                streamId: streamId,
+                delay: 2000 
+            });
         });
-    });
+    } catch (e) {
+        console.error('Error in capture flow:', e);
+    }
 }
 
 // 단축키 핸들러
 chrome.commands.onCommand.addListener(async (command) => {
+    console.log('Command Triggered:', command);
     if (command === 'toggle-record') {
         if (!isRecording) {
             await startCaptureFlow();
@@ -69,11 +77,13 @@ chrome.commands.onCommand.addListener(async (command) => {
 });
 
 // 외부 메시지 릴레이
-chrome.runtime.onMessage.addListener(async (message) => {
+chrome.runtime.onMessage.addListener((message) => {
+    console.log('Internal Message:', message.type);
     if (message.type === 'START_RECORDING') {
-        if (!isRecording) await startCaptureFlow();
+        if (!isRecording) startCaptureFlow();
     } else if (message.type === 'STOP_RECORDING') {
-        await sendToOffscreen({ type: 'STOP_RECORDING' });
+        sendToOffscreen({ type: 'STOP_RECORDING' });
         isRecording = false;
     }
+    return true;
 });
