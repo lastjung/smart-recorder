@@ -1,5 +1,5 @@
-// SmartRecorder Service Worker v1.0.16 [OVERLAY_FINAL_FIX]
-console.log('--- SmartRecorder SW v1.0.16 Booted ---');
+// SmartRecorder Service Worker v1.0.17 [NATIVE_UI_ONLY]
+console.log('--- SmartRecorder SW v1.0.17 Booted ---');
 
 // UI에 상태 업데이트 알림
 async function notifyUI(message, isForceIdle = false) {
@@ -87,8 +87,6 @@ async function initiateCapture() {
             
             if (success) {
                 await setRecordingState(true);
-                // [FIX] 오버레이 표시
-                chrome.tabs.sendMessage(tabs[0].id, { type: 'SHOW_OVERLAY' }).catch(() => {});
             } else {
                 console.log('[ERROR] Failed to start record in offscreen');
             }
@@ -111,10 +109,6 @@ async function terminateCapture() {
     } catch (e) {
         console.log('[ERROR] Terminate Fail:', e);
     } finally {
-        // [FIX] 오버레이 숨김 (활성 탭 대상)
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            if (tabs[0]) chrome.tabs.sendMessage(tabs[0].id, { type: 'HIDE_OVERLAY' }).catch(() => {});
-        });
         await setRecordingState(false);
         console.log('[SW] State Reset Complete');
     }
