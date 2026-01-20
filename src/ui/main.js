@@ -19,8 +19,8 @@ const recorder = new SmartRecorder({
         }
     },
     onStop: (url, filename) => {
+        console.log('Recorder Stopped Signal received in main.js');
         updateUIState('idle');
-        // [FIX] 수동 다운로드 버튼 강제 노출
         downloadBtn.classList.remove('hidden');
     },
     onRemoteStart: () => {
