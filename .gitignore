@@ -27,3 +27,4 @@ yarn-error.log*
 # Brain / Artifacts (Optional: if you want to exclude them from git)
 #.gemini/
 #brain/
+tube/
