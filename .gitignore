@@ -24,7 +24,23 @@ yarn-error.log*
 .env
 .DS_Store
 
-# Brain / Artifacts (Optional: if you want to exclude them from git)
-#.gemini/
-#brain/
+# Brain / Artifacts
+.gemini/
+brain/
 tube/
+
+# Python
+venv/
+__pycache__/
+*.py[cod]
+
+# Shorts Automation Assets (Excluding large generated/downloaded files)
+shorts/*/assets/
+shorts/*/voice_assets/
+shorts/*/veo/
+shorts/*/*.mp4
+shorts/*/*.mp3
+shorts/*/*.png
+shorts/*/*.jpg
+shorts/*/*.jpeg
+combined_voice.mp3

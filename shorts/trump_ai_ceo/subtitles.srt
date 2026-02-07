@@ -1,0 +1,55 @@
+1
+00:00:00,000 --> 00:00:04,000
+AI: Welcome. Mr. CEO, your resume says
+
+2
+00:00:04,000 --> 00:00:08,736
+you are "The Best" at everything. Can you be more specific?
+
+3
+00:00:08,736 --> 00:00:13,000
+CEO: Listen, I'm the best at being the best.
+
+4
+00:00:13,000 --> 00:00:18,000
+Everyone says so. Thousands of people.
+
+5
+00:00:18,000 --> 00:00:22,104
+They call me and they say, "Sir, you are the best at everything." It's huge.
+
+6
+00:00:22,104 --> 00:00:26,064
+AI: I see. And how do you handle failure?
+
+7
+00:00:26,064 --> 00:00:30,000
+CEO: Failure? I don't know the word. I never met her.
+
+8
+00:00:30,000 --> 00:00:35,000
+I only know winning. We're going to win so much,
+
+9
+00:00:35,000 --> 00:00:39,408
+you're going to get tired of winning. Believe me.
+
+10
+00:00:39,408 --> 00:00:43,000
+AI: This is a 1-on-1 interview.
+
+11
+00:00:43,000 --> 00:00:45,336
+Who are these "thousands of people"?
+
+12
+00:00:45,336 --> 00:00:50,000
+CEO: Great people. The best people. You wouldn't know them.
+
+13
+00:00:50,000 --> 00:00:54,000
+They're very successful. Unlike this interview.
+
+14
+00:00:54,000 --> 00:01:00,264
+This interview is a disaster. A total disaster.
